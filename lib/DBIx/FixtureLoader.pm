@@ -3,7 +3,7 @@ use 5.008001;
 use strict;
 use warnings;
 
-our $VERSION = "0.01";
+our $VERSION = "0.02";
 
 use File::Basename qw/basename/;
 use SQL::Maker;
@@ -140,10 +140,10 @@ sub _load_fixture_from_data {
     $dbh->begin_work or croak $dbh->errstr;
     if ($self->bulk_insert) {
         my $opt;
-        if ($self->update) {
+        if ($update) {
             $opt->{update} = _build_on_duplicate(keys %{$data->[0]});
         }
-        my ($sql, @binds) = $self->_sql_builder->insert_multi( $table, $data, $opt );
+        my ($sql, @binds) = $self->_sql_builder->insert_multi($table, $data, $opt ? $opt : ());
 
         $dbh->do( $sql, undef, @binds ) or croak $dbh->errstr;
     }
@@ -151,8 +151,8 @@ sub _load_fixture_from_data {
         my $method = $update ? 'insert_on_duplicate' : 'insert';
         for my $row (@$data) {
             my $opt;
-            $opt = _build_on_duplicate(keys %$row);
-            my ($sql, @binds) = $self->_sql_builder->$method($table, $row, $opt);
+            $opt = _build_on_duplicate(keys %$row) if $update;
+            my ($sql, @binds) = $self->_sql_builder->$method($table, $row, $opt ? $opt : ());
 
             $dbh->do( $sql, undef, @binds ) or croak $dbh->errstr;
         }
@@ -212,7 +212,7 @@ DBIx::FixtureLoader is to load fixture data and insert to your database.
 
 =head2 Constructor
 
-    C<< $loader = DBIx::FixtureLoader->new(%option) >>
+    $loader = DBIx::FixtureLoader->new(%option)
 
 C<new> is Constructor method. Various options may be set in C<%option>, which affect
 the behaviour of the object (Type and defaults in parentheses):
@@ -223,11 +223,11 @@ Required. Database handler.
 
 =head3 C<< bulk_insert (Bool) >>
 
-Using bulk_insert or not. Default value is depend on your database.
+Using bulk_insert or not. Default value depends on your database.
 
 =head3 C<< update (Bool, Default: false) >>
 
-Using C<< INSERT ON DUPLICATE >> or not. It can be used only works on C<mysql>.
+Using C<< INSERT ON DUPLICATE >> or not. It only works on MySQL.
 
 =head3 C<< csv_option (HashRef, Default: +{}) >>
 
@@ -271,8 +271,8 @@ and containing data of "user_item" table.
 
 "CSV", "YAML" and "JSON" are parsable. CSV file must have header line for determining column names.
 
-Datas in "YAML" or "JSON" must be ArrayRef<HashRef> or HashRef<HashRef>. HashRef is the data of database record
-and each keys of HashRef is matching to column names of the table.
+Datas in "YAML" or "JSON" must be ArrayRef or HashRef containing HashRefs. Each HashRef is the data
+of database record and keys of HashRef is matching to column names of the table.
 
 =head1 LICENSE
 
@@ -286,4 +286,3 @@ it under the same terms as Perl itself.
 Masayuki Matsuki E<lt>y.songmu@gmail.comE<gt>
 
 =cut
-

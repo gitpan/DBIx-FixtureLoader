@@ -28,7 +28,7 @@ no_index:
 provides:
   DBIx::FixtureLoader:
     file: lib/DBIx/FixtureLoader.pm
-    version: 0.01
+    version: 0.02
   DBIx::FixtureLoader::QueryBuilder:
     file: lib/DBIx/FixtureLoader.pm
     version: 0
@@ -45,4 +45,4 @@ resources:
   bugtracker: https://github.com/Songmu/p5-DBIx-FixtureLoader/issues
   homepage: https://github.com/Songmu/p5-DBIx-FixtureLoader
   repository: git://github.com/Songmu/p5-DBIx-FixtureLoader.git
-version: 0.01
+version: 0.02
