@@ -3,11 +3,14 @@ use 5.008001;
 use strict;
 use warnings;
 
-our $VERSION = "0.03";
+our $VERSION = "0.04";
 
 use File::Basename qw/basename/;
-use SQL::Maker;
 use Carp qw/croak/;
+
+use SQL::Maker;
+SQL::Maker->load_plugin('InsertMulti');
+SQL::Maker->load_plugin('InsertOnDuplicate');
 
 use Moo;
 
@@ -34,6 +37,11 @@ has update => (
     default => sub { undef },
 );
 
+has ignore => (
+    is      => 'ro',
+    default => sub { undef },
+);
+
 has csv_option => (
     is      => 'ro',
     isa     => sub { ref $_[0] eq 'HASH' },
@@ -50,7 +58,7 @@ has _driver_name => (
 has _sql_builder => (
     is      => 'lazy',
     default => sub {
-        DBIx::FixtureLoader::QueryBuilder->new(
+        SQL::Maker->new(
             driver => shift->_driver_name,
         );
     }
@@ -63,17 +71,22 @@ sub load_fixture {
     my $file = shift;
     my %opts = ref $_[0] ? %{$_[0]} : @_;
 
+    my $update = $opts{update};
+    my $ignore = $opts{ignore};
+    croak '`update` and `ignore` are exclusive argument' if $update && $ignore;
+
     if (ref($file) =~ /^(?:ARRAY|HASH)$/) {
         return $self->_load_fixture_from_data(data => $file, %opts);
     }
 
-    my $table = $opts{table};
+    my $table  = $opts{table};
+    my $format = lc($opts{format} || '');
+
     unless ($table) {
         my $basename = basename($file);
         ($table) = $basename =~ /^([_A-Za-z0-9]+)/;
     }
 
-    my $format = lc($opts{format} || '');
     unless ($format) {
         ($format) = $file =~ /\.([^.]*$)/;
     }
@@ -101,7 +114,7 @@ sub load_fixture {
 
     $self->load_fixture($rows,
         table  => $table,
-        update => $opts{update},
+        %opts,
     );
 }
 
@@ -128,21 +141,35 @@ sub _load_fixture_from_data {
     my ($self, %args) = @_;
     my ($table, $data) = @args{qw/table data/};
 
-    $data = $self->_normalize_data($data);
-    my $update = defined $args{update} ? $args{update} : $self->update;
+    croak '`update` and `ignore` are exclusive option' if $args{update} && $args{ignore};
+
+    my $update = $self->update;
+    my $ignore = $self->ignore;
+    croak '`update` and `ignore` are exclusive option' if $update && $ignore;
+
+    if (exists $args{update}) {
+        $update = $args{update};
+        $ignore = undef if $update;
+    }
+    if (exists $args{ignore}) {
+        $ignore = $args{ignore};
+        $update = undef if $ignore;
+    }
 
     if ($update && $self->_driver_name ne 'mysql') {
-        croak '`update` option only supprt mysql'
+        croak '`update` option only support mysql'
     }
+
+    $data = $self->_normalize_data($data);
 
     my $dbh = $self->dbh;
     # needs limit ?
     $dbh->begin_work or croak $dbh->errstr;
+
+    my $opt; $opt->{prefix} = 'INSERT IGNORE INTO' if $ignore;
     if ($self->bulk_insert) {
-        my $opt;
-        if ($update) {
-            $opt->{update} = _build_on_duplicate(keys %{$data->[0]});
-        }
+        $opt->{update} = _build_on_duplicate(keys %{$data->[0]}) if $update;
+
         my ($sql, @binds) = $self->_sql_builder->insert_multi($table, $data, $opt ? $opt : ());
 
         $dbh->do( $sql, undef, @binds ) or croak $dbh->errstr;
@@ -150,7 +177,6 @@ sub _load_fixture_from_data {
     else {
         my $method = $update ? 'insert_on_duplicate' : 'insert';
         for my $row (@$data) {
-            my $opt;
             $opt = _build_on_duplicate(keys %$row) if $update;
             my ($sql, @binds) = $self->_sql_builder->$method($table, $row, $opt ? $opt : ());
 
@@ -180,11 +206,6 @@ sub _normalize_data {
     }
     \@ret;
 }
-
-package DBIx::FixtureLoader::QueryBuilder;
-use parent 'SQL::Maker';
-__PACKAGE__->load_plugin('InsertMulti');
-__PACKAGE__->load_plugin('InsertOnDuplicate');
 
 1;
 __END__
@@ -229,6 +250,10 @@ Using bulk_insert or not. Default value depends on your database.
 
 Using C<< INSERT ON DUPLICATE >> or not. It only works on MySQL.
 
+=head3 C<< ignore (Bool, Default: false) >>
+
+Using C<< INSERT IGNORE >> or not. This option is exclusive with C<update>.
+
 =head3 C<< csv_option (HashRef, Default: +{}) >>
 
 Specifying L<Text::CSV>'s option. C<binary> and C<blank_is_undef>
@@ -256,6 +281,10 @@ data format. "CSV", "YAML" and "JSON" are available.
 =item C<update:Bool>
 
 Using C<< ON DUPLICATE KEY UPDATE >> or not. Default value depends on object setting.
+
+=item C<< ignore:Bool >>
+
+Using C<< INSERT IGNORE >> or not.
 
 =back
 
