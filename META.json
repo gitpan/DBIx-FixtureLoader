@@ -62,19 +62,19 @@
    "provides" : {
       "DBIx::FixtureLoader" : {
          "file" : "lib/DBIx/FixtureLoader.pm",
-         "version" : "0.06"
+         "version" : "0.07"
       }
    },
    "release_status" : "stable",
    "resources" : {
       "bugtracker" : {
-         "web" : "https://github.com/Songmu/p5-DBIx-FixtureManager/issues"
+         "web" : "https://github.com/Songmu/p5-DBIx-FixtureLoader/issues"
       },
-      "homepage" : "https://github.com/Songmu/p5-DBIx-FixtureManager",
+      "homepage" : "https://github.com/Songmu/p5-DBIx-FixtureLoader",
       "repository" : {
-         "url" : "git://github.com/Songmu/p5-DBIx-FixtureManager.git",
-         "web" : "https://github.com/Songmu/p5-DBIx-FixtureManager"
+         "url" : "git://github.com/Songmu/p5-DBIx-FixtureLoader.git",
+         "web" : "https://github.com/Songmu/p5-DBIx-FixtureLoader"
       }
    },
-   "version" : "0.06"
+   "version" : "0.07"
 }
