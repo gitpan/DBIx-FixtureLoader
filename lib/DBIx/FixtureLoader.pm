@@ -3,7 +3,7 @@ use 5.008001;
 use strict;
 use warnings;
 
-our $VERSION = "0.07";
+our $VERSION = "0.08";
 
 use File::Basename qw/basename/;
 use Carp qw/croak/;
@@ -161,6 +161,7 @@ sub _load_fixture_from_data {
     }
 
     $data = $self->_normalize_data($data);
+    return unless @$data;
 
     my $dbh = $self->dbh;
     # needs limit ?
