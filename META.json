@@ -62,7 +62,7 @@
    "provides" : {
       "DBIx::FixtureLoader" : {
          "file" : "lib/DBIx/FixtureLoader.pm",
-         "version" : "0.08"
+         "version" : "0.09"
       }
    },
    "release_status" : "stable",
@@ -76,7 +76,7 @@
          "web" : "https://github.com/Songmu/p5-DBIx-FixtureLoader"
       }
    },
-   "version" : "0.08",
+   "version" : "0.09",
    "x_contributors" : [
       "taiyoh <sun.basix@gmail.com>"
    ]

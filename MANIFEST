@@ -11,11 +11,13 @@ t/01_basic.t
 t/02_utf8.t
 t/03_mysql.t
 t/04_empty.t
+t/05_skip_null_column.t
 t/data/item-2.yml
 t/data/item-3.json
 t/data/item-4.yaml
 t/data/item-5-fixture-dbi.txt
 t/data/item-ascii.csv
+t/data/item-skip-null.csv
 t/data/item-update.csv
 t/data/item.csv
 t/data/zero.csv
